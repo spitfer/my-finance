@@ -631,13 +631,81 @@ html,body{max-width:100%;}
  #mfMobileShell #m22Body{display:block!important;visibility:visible!important;min-height:70px!important}
  #mfMobileError:not([hidden]){display:block!important;padding:12px 16px;background:#4b1e2b;color:#fff;white-space:pre-wrap;font-size:12px}
 }
+</style><style id="mf23-welcome-style">
+@media(max-width:760px){
+ #mfMobileShell.mf23-welcome-mode .mf-mobile-brand,#mfMobileShell.mf23-welcome-mode #mfMobileMount{display:none!important}
+ #mfMobileShell.mf23-welcome-mode #mf23Welcome{display:flex!important}
+ #mf23Welcome[hidden]{display:none!important}
+ #mf23Welcome{box-sizing:border-box;min-height:100dvh;min-height:100vh;display:none;flex-direction:column;padding:calc(env(safe-area-inset-top) + 36px) 24px calc(env(safe-area-inset-bottom) + 30px);color:#eaf2ff;background:radial-gradient(ellipse at 50% 0%,#173a59 0%,#0a182b 43%,#07111f 85%);font-family:system-ui,-apple-system,sans-serif}
+ #mf23Welcome *{box-sizing:border-box}
+ #mf23Welcome .mf23-hero{text-align:center;padding:18px 0 23px}
+ #mf23Welcome .mf23-logo{width:76px;height:76px;margin:0 auto 20px;border-radius:23px;display:flex;align-items:center;justify-content:center;font-size:29px;font-weight:750;letter-spacing:-1px;color:#d5f0ff;background:linear-gradient(145deg,#2a83bb,#132b48 70%);box-shadow:0 10px 36px #0279c33b}
+ #mf23Welcome .mf23-kicker{font-size:10px;font-weight:700;letter-spacing:2px;color:#80b9db}
+ #mf23Welcome h1{font-size:34px;line-height:1.15;margin:12px 0 6px;letter-spacing:-.7px}
+ #mf23Welcome .mf23-subtitle{font-size:14px;color:#a6c2dc;margin:0}
+ #mf23Welcome .mf23-intro{text-align:center;margin:12px auto 24px;max-width:350px}
+ #mf23Welcome .mf23-intro h2{font-size:20px;margin:0 0 12px;font-weight:650}
+ #mf23Welcome .mf23-intro p{font-size:14px;line-height:1.6;color:#b5c5d9;margin:0}
+ #mf23Welcome .mf23-benefits{display:grid;gap:0;background:#10243b;border:1px solid #27425e;border-radius:17px;padding:8px 18px;margin-bottom:26px}
+ #mf23Welcome .mf23-benefits>div{display:flex;align-items:center;gap:14px;min-height:52px;font-size:14px;color:#e5f0fc}
+ #mf23Welcome .mf23-benefits>div+div{border-top:1px solid #294059}
+ #mf23Welcome .mf23-benefits>div>span:first-child{width:24px;text-align:center;font-size:20px;color:#70caff}
+ #mf23Continue{display:flex;justify-content:center;align-items:center;gap:13px;width:100%;border:0;border-radius:13px;padding:17px 15px;background:#1479b9;color:white;font-size:16px;font-weight:700;cursor:pointer;min-height:55px}
+ #mf23Continue:disabled{opacity:.55}
+ #mf23Welcome .mf23-authnote{text-align:center;color:#a9bfd4;font-size:12px;margin:15px 0 0;line-height:1.5}
+ #mf23Welcome .mf23-foot{margin-top:auto;padding-top:30px;color:#7895af;text-align:center;font-size:11px;line-height:1.5}
+}
 </style></head>
 <body>
 <div id="mfMobileShell" aria-label="My Finance Mobile">
-  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.2.4</span></div>
+  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.3</span></div>
+  <section id="mf23Welcome" class="mf23-welcome" aria-labelledby="mf23Title" hidden>
+    <div class="mf23-hero"><div class="mf23-logo" aria-hidden="true">FJ</div>
+      <div class="mf23-kicker">YOUR PERSONAL FINANCIAL INTELLIGENCE</div>
+      <h1 id="mf23Title">My Finance</h1><p class="mf23-subtitle">Your finances, simplified.</p>
+    </div>
+    <div class="mf23-intro"><h2>Welcome to My Finance</h2><p>Understand your monthly balance, keep expenses under control, and see what needs your attention — all in one place.</p></div>
+    <div class="mf23-benefits" aria-label="O que você encontra no aplicativo">
+      <div><span aria-hidden="true">◉</span><span>Monthly financial overview</span></div>
+      <div><span aria-hidden="true">◇</span><span>Smart budget alerts</span></div>
+      <div><span aria-hidden="true">◎</span><span>Personalized spending insights</span></div>
+    </div>
+    <button id="mf23Continue" type="button" class="mf23-continue">Continue with Microsoft <span aria-hidden="true">→</span></button>
+    <div id="mf23AuthNote" role="status" class="mf23-authnote">Connect securely to your private OneDrive.</div>
+    <div class="mf23-foot">Your workbook stays in OneDrive. Only you authorize access.</div>
+  </section>
   <div id="mfMobileMount"><div class="mf-mobile-loading">Preparando painel financeiro…</div></div>
   <div id="mfMobileError" role="alert" hidden></div>
 </div>
+<script id="mf23-welcome-controller">
+(function(){
+ if(!window.matchMedia||!matchMedia('(max-width:760px)').matches)return;
+ const shell=document.getElementById('mfMobileShell');
+ const welcome=document.getElementById('mf23Welcome');
+ const continueBtn=document.getElementById('mf23Continue');
+ const note=document.getElementById('mf23AuthNote');
+ if(!shell||!welcome||!continueBtn)return;
+ function update(){
+   // mfAccount is declared in the existing application script and is available after initialization.
+   const signedIn=typeof mfAccount!=='undefined'&&!!mfAccount;
+   shell.classList.toggle('mf23-welcome-mode',!signedIn);
+   welcome.hidden=signedIn;
+   continueBtn.disabled=typeof mfBusy!=='undefined'&&!!mfBusy;
+   if(signedIn)note.textContent='Connected to Microsoft';
+ }
+ window.mf23UpdateWelcome=update;
+ window.mf23AuthError=function(message){note.textContent='Unable to initialize Microsoft sign-in: '+message;continueBtn.disabled=false;};
+ continueBtn.addEventListener('click',()=>{
+   const btn=document.getElementById('mfLogin');
+   if(!btn){note.textContent='Microsoft sign-in is unavailable. Reload the application.';return;}
+   if(btn.disabled){note.textContent='Microsoft sign-in is still initializing. Please try again.';return;}
+   note.textContent='Opening secure Microsoft sign-in…';
+   btn.click();
+ });
+ shell.classList.add('mf23-welcome-mode');
+ welcome.hidden=false;
+})();
+</script>
   <div class="layout">
     <!-- SIDEBAR -->
     <aside class="sidebar">
@@ -963,6 +1031,7 @@ function mfButtons() {
   mfLogoutBtn.style.display = mfAccount ? '' : 'none';
   mfRefreshBtn.disabled = !mfAccount || mfBusy;
   mfLoginBtn.disabled = mfBusy;
+  if(window.mf23UpdateWelcome) window.mf23UpdateWelcome();
 }
 async function mfToken() {
   const req = {account:mfAccount,scopes:MF_SCOPES};
@@ -1012,6 +1081,7 @@ async function mfStartAuth() {
   mfAccount=result?.account || mfMsal.getAllAccounts()[0] || null;
   if(mfAccount) mfMsal.setActiveAccount(mfAccount);
   mfButtons();
+  if(window.mf23UpdateWelcome) window.mf23UpdateWelcome();
   if(mfAccount) await mfDownloadOneDrive();
   else mfSetStatus('Sign in with Microsoft to load your private workbook');
 }
@@ -1026,7 +1096,7 @@ mfLogoutBtn.addEventListener('click',async()=>{
   mfWorkbook=null;mfBytes=null;mfBaseRows=null;mfWeekBytes=null;
   await mfMsal.logoutRedirect({account:mfAccount});
 });
-mfStartAuth().catch(err=>mfSetStatus('Authentication initialization error: '+err.message));
+mfStartAuth().catch(err=>{mfSetStatus('Authentication initialization error: '+err.message);if(window.mf23AuthError)window.mf23AuthError(err.message);});
 
 // Original HUB navigation continues to manage which iframe is visible.
 // Intercept its src assignment by preloading each iframe with embedded srcdoc.
@@ -1085,7 +1155,7 @@ if(matchMedia('(max-width:760px)').matches)document.body.classList.add('mf22-rea
  const shell=document.getElementById('mfMobileShell');
  const mount=document.getElementById('mfMobileMount');
  const err=document.getElementById('mfMobileError');
- function report(e){err.hidden=false;err.textContent='Diagnóstico My Finance 2.2.3: '+String(e&&e.message||e);}
+ function report(e){err.hidden=false;err.textContent='Diagnóstico My Finance 2.3: '+String(e&&e.message||e);}
  window.addEventListener('error',e=>report(e.error||e.message));
  window.addEventListener('unhandledrejection',e=>report(e.reason));
  try{
