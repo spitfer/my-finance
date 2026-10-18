@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>My Finance 2.0 — OneDrive</title>
+  <title>My Finance 2.1 — OneDrive</title>
+  <meta name="theme-color" content="#020617" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="My Finance" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
@@ -539,7 +545,64 @@
     }
   </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js"></script><style>@media(max-width:760px){.layout{grid-template-columns:1fr!important}.sidebar{position:relative!important;height:auto!important;padding:8px!important}.nav-list{flex-direction:row!important;overflow:auto}.nav-item{min-width:155px}.sidebar-footer{display:none}.welcome{position:relative!important}.welcome-content{grid-template-columns:1fr!important}.main-header{padding:8px!important}.viewer-iframe-wrapper{min-height:70vh}#mfToolbar{position:relative;z-index:2}}</style></head>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js"></script><style>@media(max-width:760px){.layout{grid-template-columns:1fr!important}.sidebar{position:relative!important;height:auto!important;padding:8px!important}.nav-list{flex-direction:row!important;overflow:auto}.nav-item{min-width:155px}.sidebar-footer{display:none}.welcome{position:relative!important}.welcome-content{grid-template-columns:1fr!important}.main-header{padding:8px!important}.viewer-iframe-wrapper{min-height:70vh}#mfToolbar{position:relative;z-index:2}}</style><style>
+/* My Finance 2.1 — mobile-first overrides. Desktop behavior unchanged. */
+html,body{max-width:100%;}
+.main,.viewer,.viewer-inner,.viewer-iframe-wrapper{min-width:0;}
+@media(max-width:760px){
+ html,body{width:100%;overflow-x:hidden;}
+ body{display:block;min-height:100dvh;}
+ .layout{display:block!important;width:100%;min-height:100dvh;}
+ .sidebar{position:relative!important;top:auto!important;width:100%;height:auto!important;padding:16px 16px 12px!important;border-right:0;border-bottom:1px solid #243247;}
+ .sidebar-header{margin-bottom:14px;}
+ .sidebar-title h1{font-size:14px;letter-spacing:.025em;}
+ .sidebar-title span{font-size:11px;}
+ .sidebar-section-label{margin:12px 0 8px;font-size:10px;}
+ .sidebar .nav-list{display:flex!important;flex-direction:column!important;overflow:visible!important;gap:8px;width:100%;}
+ .sidebar .nav-item{width:100%;min-width:0!important;min-height:54px;padding:12px!important;background:#101e34;border:1px solid #253851;border-radius:12px;font-size:13px;}
+ .sidebar .nav-item span.text{min-width:0;overflow-wrap:anywhere;line-height:1.35;}
+ .sidebar .nav-item span.badge{flex:none;font-size:10px;}
+ .sidebar .nav-item.disabled{min-height:40px;background:transparent;padding:7px 10px!important;}
+ .sidebar-footer{display:none!important;}
+ .main{width:100%;min-height:0!important;display:flex;}
+ .main-header{padding:12px 16px!important;align-items:flex-start;flex-direction:column;gap:8px;}
+ .main-header-left,.main-header-right{width:100%;min-width:0;}
+ .main-header-tag{display:none;}
+ .main-header-button{min-height:40px;font-size:12px;}
+ .main-title{font-size:15px;line-height:1.4;overflow-wrap:anywhere;}
+ .viewer{width:100%;min-height:0;display:block;}
+ .viewer-inner{width:100%;display:flex;flex-direction:column;}
+ #mfToolbar{order:0;position:relative!important;z-index:2;display:flex!important;align-items:stretch!important;gap:8px!important;padding:12px 16px!important;flex-wrap:wrap!important;}
+ #mfToolbar button{min-height:42px;max-width:100%;flex:1 1 auto;}
+ #mfFileName,#mfStatus{flex:1 1 100%;overflow-wrap:anywhere;line-height:1.4;}
+ .welcome{order:1;position:relative!important;inset:auto!important;display:flex;justify-content:flex-start;padding:14px 16px 22px!important;pointer-events:auto;}
+ .welcome-card{padding:16px!important;border-radius:14px;max-width:100%;}
+ .welcome-content{grid-template-columns:minmax(0,1fr)!important;gap:12px;}
+ .welcome-topline{font-size:10px;letter-spacing:.12em;}
+ .welcome-title{font-size:17px;}
+ .welcome-subtitle{font-size:12px;line-height:1.5;}
+ .welcome-steps,.welcome-footer{display:none;}
+ .welcome-steps-title{display:none;}
+ .welcome-right{gap:8px;}
+ .mini-card{padding:10px 12px;}
+ .mini-card:last-child{display:none;}
+ .mini-card-main{font-size:15px;}
+ .viewer-iframe-wrapper{order:2;position:relative;min-height:0!important;width:100%;border-top:0;}
+ .viewer-iframe-wrapper:has(.dash-iframe.active){height:calc(100dvh - 100px);min-height:650px!important;}
+ .dash-iframe{max-width:100%;}
+ .no-dashboard-msg{display:none!important;}
+ /* Dashboard view: reclaim vertical space for the selected dashboard. */
+ body:has(.dash-iframe.active) .sidebar{padding:10px 16px!important;}
+ body:has(.dash-iframe.active) .sidebar .sidebar-section-label,
+ body:has(.dash-iframe.active) .sidebar .nav-list,
+ body:has(.dash-iframe.active) .sidebar .sidebar-footer{display:none!important;}
+ body:has(.dash-iframe.active) .sidebar-header{margin:0;}
+ body:has(.dash-iframe.active) .main-header{padding:8px 16px!important;}
+ body:has(.dash-iframe.active) .main-breadcrumb{display:none;}
+ body:has(.dash-iframe.active) #mfToolbar{padding:8px 16px!important;}
+ body:has(.dash-iframe.active) #mfToolbar #mfFileName{display:none;}
+}
+</style></head>
 <body>
   <div class="layout">
     <!-- SIDEBAR -->
@@ -587,7 +650,7 @@
       <div class="sidebar-footer">
         <div class="sidebar-footer-line">
           <span>Portal version</span>
-          <span>v2.0 EN</span>
+          <span>v2.1 EN</span>
         </div>
         <div class="sidebar-footer-line" style="margin-top: 6px;">
           <span>Status</span>
@@ -839,7 +902,8 @@ const mfLoaded=[false,false,false];
 const mfStatus=document.getElementById('mfStatus');
 function mfSetStatus(s){mfStatus.textContent=s;}
 function mfSend(i){if(!mfWorkbook||!mfLoaded[i])return;mfFrames[i].contentWindow.postMessage({type:'MYFINANCE_DATA',bytes:mfBytes,baseRows:mfBaseRows,weekBytes:mfWeekBytes},'*');}
-function mfLoad(i){if(mfLoaded[i]){mfSend(i);return;}mfLoaded[i]=true;mfFrames[i].srcdoc=new TextDecoder().decode(Uint8Array.from(atob(MYFINANCE_MODULES_B64[i]),c=>c.charCodeAt(0)));mfFrames[i].addEventListener('load',()=>mfSend(i),{once:true});}
+const MF_MOBILE_MODULE_CSS = '<style id="mf21-responsive">\nhtml,body{max-width:100%;}\n@media(max-width:760px){\n html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important;}\n body{min-width:0!important;}\n header{padding:12px 14px!important;gap:8px!important;flex-wrap:wrap!important;}\n header h1{font-size:16px!important;line-height:1.3!important;}\n .subtitle{font-size:11px!important;}\n .top-bar{padding:12px 14px!important;gap:8px!important;display:flex!important;flex-wrap:wrap!important;}\n .top-bar label{flex:0 0 auto;}\n .top-bar select,.top-bar input,.top-bar button,.select{max-width:100%!important;min-height:36px;}\n .kpis{padding:10px 14px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;}\n .kpi{min-width:0!important;padding:11px!important;overflow-wrap:anywhere;}\n .kpi-value{font-size:clamp(15px,4.5vw,21px)!important;overflow-wrap:anywhere;}\n .kpi-title{font-size:10px!important;line-height:1.4!important;}\n #layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;padding:10px 14px 24px!important;gap:12px!important;}\n #layout>.card{grid-column:1/-1!important;min-width:0!important;}\n .card{min-width:0!important;max-width:100%!important;overflow:hidden!important;}\n .card h3{line-height:1.4!important;overflow-wrap:anywhere;}\n canvas{max-width:100%!important;}\n table{max-width:100%;}\n #insightBox{margin:10px 14px!important;}\n .filters,.filter-bar,.controls{max-width:100%;flex-wrap:wrap!important;}\n }\n @media(max-width:390px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}\n</style>';
+function mfLoad(i){if(mfLoaded[i]){mfSend(i);return;}mfLoaded[i]=true;mfFrames[i].srcdoc=new TextDecoder().decode(Uint8Array.from(atob(MYFINANCE_MODULES_B64[i]),c=>c.charCodeAt(0))).replace('</head>',MF_MOBILE_MODULE_CSS+'</head>');mfFrames[i].addEventListener('load',()=>mfSend(i),{once:true});}
 function mfRows(wb,name,rowIndex){const ws=wb.Sheets[name];if(!ws)throw Error('Aba não encontrada: '+name);return XLSX.utils.sheet_to_json(ws,{range:rowIndex,defval:''});}
 function mfBase(wb){const ws=wb.Sheets['Base'];if(!ws)throw Error('Aba Base ausente');const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});const hi=aoa.findIndex(r=>r[0]==='Tipo'&&r.includes('Categoria')&&r.includes('Descrição'));if(hi<0)throw Error('Cabeçalhos da aba Base não encontrados');const head=aoa[hi].map(String);const out=[];for(let j=hi+1;j<aoa.length;j++){const row=aoa[j];if(!row||!row.some(x=>x!==''&&x!=null))continue;const obj={};head.forEach((h,k)=>{if(h)obj[h]=row[k]??''});if(obj.Tipo||obj.Categoria||obj['Descrição'])out.push(obj);}return out;}
 function mfWeekly(wb){const ws=wb.Sheets['Plan'];if(!ws)throw Error('Aba Plan ausente');const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});const start=aoa.findIndex(r=>String(r[0]).toLowerCase().includes('mês')&&r.some(v=>String(v).toLowerCase()==='plan'));if(start<0)throw Error('Cabeçalhos Plan/Real não encontrados');const weekrow=(aoa[start-1]||[]).map(x=>x===''?null:x);const data=[weekrow, ...aoa.slice(start)];const out=XLSX.utils.aoa_to_sheet(data);const nw=XLSX.utils.book_new();XLSX.utils.book_append_sheet(nw,out,'Sheet1');return Array.from(new Uint8Array(XLSX.write(nw,{bookType:'xlsx',type:'array'})));}
