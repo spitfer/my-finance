@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>My Finance 2.3.7 — Auditoria e Investimentos</title>
+  <title>My Finance 2.3.8 — Auditoria e Investimentos</title>
   <meta name="theme-color" content="#020617" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -658,7 +658,7 @@ html,body{max-width:100%;}
 </style></head>
 <body>
 <div id="mfMobileShell" aria-label="My Finance Mobile">
-  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.3.7</span></div>
+  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.3.8</span></div>
   <section id="mf23Welcome" class="mf23-welcome" aria-labelledby="mf23Title" hidden>
     <div class="mf23-hero"><div class="mf23-logo" aria-hidden="true">FJ</div>
       <div class="mf23-kicker">YOUR PERSONAL FINANCIAL INTELLIGENCE</div>
@@ -1137,21 +1137,26 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const key=(y,m)=>y+'-'+String(m+1).padStart(2,'0');
 function monthHeader(h){let v=String(h||'').trim();let a=v.match(/^(\w+)[\/ ](\d{2,4})$/);if(!a)return null;let m=months.findIndex(x=>x.toLowerCase()===a[1].toLowerCase() || x.toLowerCase().slice(0,3)===a[1].toLowerCase().slice(0,3));if(m<0)return null;let y=Number(a[2]);if(y<100)y+=2000;return key(y,m);}
 function context(){if(!mfWorkbook||!mfBaseRows)return null;const wb=mfWorkbook;const hdr=Object.keys(mfBaseRows[0]||{});const dateCols=hdr.map(h=>[h,monthHeader(h)]).filter(x=>x[1]);const opts=dateCols.map(x=>x[1]);const today=new Date();const cur=key(today.getFullYear(),today.getMonth());if(!selected)selected=opts.includes(cur)?cur:opts[opts.length-1];const monthField=dateCols.find(x=>x[1]===selected)?.[0];return {wb,dateCols,opts,monthField};}
-function rowsFor(c,k){let col=c.dateCols.find(x=>x[1]===k)?.[0];if(!col)return[];return mfBaseRows.filter(r=>!/^previs/i.test(String(r.Tipo||''))&&num(r[col])!==0).map(r=>({category:String(r.Categoria||'Sem categoria'),subcategory:String(r['Sub categoria']||''),description:String(r['Descrição']||''),amount:num(r[col]),type:String(r.Tipo||''),group:String(r.Grupo||''),origin:String(r['Origem Debito']||'')}));}
+function rowsFor(c,k){let col=c.dateCols.find(x=>x[1]===k)?.[0];if(!col)return[];return mfBaseRows.filter(r=>!/^previs/i.test(String(r.Tipo||''))&&num(r[col])!==0).map(r=>({category:String(r.Categoria||'Sem categoria'),subcategory:String(r['Sub categoria']||''),description:String(r['Descrição']||''),amount:num(r[col]),type:String(r.Tipo||''),group:String(r.Grupo||''),group2:String(r['Grupo 2']||''),origin:String(r['Origem Debito']||'')}));}
 function normalizedOwner(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();}
-function sharesFor(r){const g=normalizedOwner(r.group),o=normalizedOwner(r.subcategory);
- if(g==='huawei')return {huawei:1};
- if(g==='casal'){if(o==='fabio')return {fabio:1};if(o==='juliana')return {juliana:1};return {fabio:.5,juliana:.5};}
- if(g==='fabio'||g==='juliana')return {[g]:1};
- if(o==='casal')return {fabio:.5,juliana:.5};
- if(['fabio','juliana','huawei'].includes(o))return {[o]:1};
+function sharesFor(r){
+ const owner=normalizedOwner(r.group2);
+ if(owner==='huawei')return {huawei:1};
+ if(owner==='fabio')return {fabio:1};
+ if(owner==='juliana')return {juliana:1};
+ if(owner==='casal')return {fabio:.5,juliana:.5};
  return {};
 }
 function allocatedRows(rows){const result=[];for(const r of rows){const shares=sharesFor(r);const fraction=Object.entries(shares).reduce((sum,[who,share])=>sum+(owners.has(who)?share:0),0);if(fraction)result.push({...r,originalAmount:r.amount,amount:r.amount*fraction,allocatedTo:Object.entries(shares).filter(([who])=>owners.has(who)).map(([who,share])=>who+' '+Math.round(share*100)+'%').join(' + ')});}return result;}
-function expenseAllocatedRows(rows){const result=[];for(const r of rows){const shares=sharesFor(r);let fraction=Object.entries(shares).reduce((sum,[who,share])=>sum+(expenseOwners.has(who)?share:0),0);if(expenseOwners.has('casal')&&normalizedOwner(r.group)==='casal')fraction=1;if(fraction>0)result.push({...r,originalAmount:r.amount,amount:r.amount*Math.min(1,fraction)});}return result;}
+function expenseAllocatedRows(rows){
+ // The Despesas view selects the ORIGINAL records by Grupo 2.
+ // Casal is a shared record, displayed once at its original amount.
+ return rows.filter(r=>expenseOwners.has(normalizedOwner(r.group2)))
+            .map(r=>({...r,originalAmount:r.amount}));
+}
 function breakdown(rows){const own={fabio:0,juliana:0,huawei:0};for(const r of rows){for(const [who,share] of Object.entries(sharesFor(r))){own[who]+=r.amount*share;}}return own;}
 function ownerInfo(){return Array.from(owners).map(o=>o==='fabio'?'Fabio':o==='juliana'?'Juliana':'Huawei').join(' + ')||'Nenhum responsável';}
-function ownerFilterNote(){return `<div class="m224-note">Filtro: <strong>${esc(ownerInfo())}</strong>. Grupo Huawei = 100% Huawei. Grupo Casal: Sub categoria Fabio ou Juliana = 100% individual; demais subcategorias = 50% para cada um. Orçamento da aba Plan e receitas são globais, sem rateio por responsável.</div>`;}
+function ownerFilterNote(){return `<div class="m224-note">Filtro: <strong>${esc(ownerInfo())}</strong>. Grupo Huawei = 100% Huawei. Grupo 2 determina o responsável: Fabio e Juliana = 100% individual; Casal = 50% para cada; Huawei = reembolso. Orçamento da aba Plan e receitas são globais, sem rateio por responsável.</div>`;}
 function income(c,k){const ws=c.wb.Sheets['base receita vs despesa'];if(!ws)return null;const a=XLSX.utils.sheet_to_json(ws,{defval:''});let found=false,total=0;const selectedOwners=new Set([...owners].filter(o=>o!=='huawei'));if(!selectedOwners.size)return 'not-applicable';for(const r of a){if(String(r.Tipo||'').toLowerCase().trim()!=='receita')continue;const who=normalizedOwner(r.Origem);if(!selectedOwners.has(who))continue;let d=r.Dia;let dt=d instanceof Date?d:(typeof d==='number'?XLSX.SSF.parse_date_code(d):null);let ky=dt?(dt instanceof Date?key(dt.getFullYear(),dt.getMonth()):key(dt.y,dt.m-1)):null;if(ky===k){total+=num(r.Valor);found=true;}}return found?total:null;}
 function budget(c,k){const ws=c.wb.Sheets.Plan;if(!ws)return{};const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});const monthName=months[Number(k.slice(5))-1].toLowerCase();const by={};for(const r of aoa){if(String(r[0]||'').toLowerCase().trim()!==monthName)continue;const cat=String(r[1]||'').trim();if(!cat||cat.toLowerCase()==='total')continue;let plan=0,real=0,has=false;for(let j=3;j<=10;j+=2){if(r[j]!==''&&r[j]!=null){plan+=num(r[j]);has=true;}real+=num(r[j+1]);}if(!has)continue;if(!by[cat])by[cat]={plan:0,real:0};by[cat].plan+=plan;by[cat].real+=real;}return by;}
 function investments(c,k){
@@ -1180,18 +1185,18 @@ function render(){const c=context();const select=$('m22Month');if(!c){$('m22Stat
 if(select.options.length!==c.opts.length){select.innerHTML=c.opts.map(k=>`<option value="${k}">${months[Number(k.slice(5))-1]} ${k.slice(0,4)}</option>`).join('');}select.value=selected;
 $('m22Status').textContent='OneDrive sincronizado';$('m224Owners').hidden=tab!=='insights';$('mf235ExpenseDrive').hidden=tab!=='transactions';$('mf234ExpenseFilters').hidden=tab!=='transactions';
 if(!tab){body.innerHTML='';return;}
-const allRows=rowsFor(c,selected), rows=allocatedRows(allRows),spent=rows.reduce((a,r)=>a+r.amount,0);
+const allRows=rowsFor(c,selected), rows=allocatedRows(allRows),spent=rows.reduce((a,r)=>a+r.amount,0);const unassigned=allRows.filter(r=>Object.keys(sharesFor(r)).length===0);
 const prevKeys=[1,2,3].map(i=>{let [y,m]=selected.split('-').map(Number);const d=new Date(y,m-1-i,1);return key(d.getFullYear(),d.getMonth());});const prior=prevKeys.map(k=>c.opts.includes(k)?allocatedRows(rowsFor(c,k)).reduce((a,r)=>a+r.amount,0):null);const avg=prior.every(x=>x!==null)?prior.reduce((a,b)=>a+b,0)/3:null;
 if(tab==='insights'){
 const rev=income(c,selected);
 // Huawei is a reimbursement account, not part of the family's expense denominator.
 // For combined selections, family participation excludes Huawei on BOTH sides.
-const familyTotal=allRows.filter(r=>normalizedOwner(r.group)!=='huawei').reduce((a,r)=>a+r.amount,0);
-const familySpent=rows.filter(r=>normalizedOwner(r.group)!=='huawei').reduce((a,r)=>a+r.amount,0);
+const familyTotal=allRows.filter(r=>normalizedOwner(r.group2)!=='huawei').reduce((a,r)=>a+r.amount,0);
+const familySpent=rows.filter(r=>normalizedOwner(r.group2)!=='huawei').reduce((a,r)=>a+r.amount,0);
 const hasFamilyDrive=owners.has('fabio')||owners.has('juliana');
 const share=hasFamilyDrive&&familyTotal>0?familySpent/familyTotal*100:null;
 let html='<div class="m22-section">Executive Insights</div>';
-html+=card('Valor da despesa',money(spent));
+html+=card('Valor da despesa',money(spent));if(unassigned.length)html+=`<div class="m224-note">Atenção: ${unassigned.length} lançamento(s) sem Grupo 2 reconhecido não foram atribuídos.</div>`;
 html+=card('Média dos últimos 3 meses',avg===null?'Histórico insuficiente':money(avg),avg===null?'':`Variação da despesa atual: ${avg===0?'—':percentChange((spent/avg-1)*100)}`);
 html+=card('Participação nas despesas do casal',share===null?'Not applicable':pct(share),share===null?'':`Base familiar (sem Huawei): ${money(familyTotal)}`);
 html+=card('Receita',rev==='not-applicable'?'Not applicable':rev===null?'Indisponível':money(rev));
@@ -1201,12 +1206,12 @@ const cats={};rows.forEach(r=>cats[r.category]=(cats[r.category]||0)+r.amount);h
 const expenseRows=expenseAllocatedRows(allRows);const types=expenseRows.map(r=>r.type||'Não informado'),origins=expenseRows.map(r=>r.origin||'Não informado');const tUnique=[...new Set(types)],oUnique=[...new Set(origins)];if(!expenseTypesReady){tUnique.forEach(v=>expenseTypes.add(v));expenseTypesReady=true;}if(!expenseOriginsReady){oUnique.forEach(v=>expenseOrigins.add(v));expenseOriginsReady=true;}
 filterChoices('mf234Types',types,expenseTypes,'type');filterChoices('mf234Origins',origins,expenseOrigins,'origin');
 const filtered=expenseRows.filter(r=>expenseTypes.has(r.type||'Não informado')&&expenseOrigins.has(r.origin||'Não informado'));const total=filtered.reduce((a,r)=>a+r.amount,0);
-body.innerHTML=`<div class="m22-section">Despesas · ${filtered.length} lançamentos</div>`+card('Total filtrado',money(total))+(filtered.length?'<div class="m22-card">'+filtered.sort((a,b)=>b.amount-a.amount).map((r,i)=>`<button class="m22-item" type="button" data-detail="d${i}"><div class="m22-row"><span>${esc(r.description||r.subcategory||r.category)}</span><strong>${money(r.amount)}</strong></div><small>${esc(r.category)} · ${esc(r.subcategory)}</small></button><div class="m22-detail" id="d${i}">Tipo: ${esc(r.type)} · Grupo: ${esc(r.group)} · Origem: ${esc(r.origin)}</div>`).join('')+'</div>':'<div class="m22-card">Nenhum lançamento para os filtros selecionados.</div>');body.querySelectorAll('[data-detail]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.detail).classList.toggle('open')));
+body.innerHTML=`<div class="m22-section">Despesas · ${filtered.length} lançamentos</div>`+card('Total filtrado',money(total))+(filtered.length?'<div class="m22-card">'+filtered.sort((a,b)=>b.amount-a.amount).map((r,i)=>`<button class="m22-item" type="button" data-detail="d${i}"><div class="m22-row"><span>${esc(r.description||r.subcategory||r.category)}</span><strong>${money(r.amount)}</strong></div><small>${esc(r.category)} · ${esc(r.subcategory)}</small></button><div class="m22-detail" id="d${i}">Tipo: ${esc(r.type)} · Grupo 2: ${esc(r.group2)} · Origem: ${esc(r.origin)}</div>`).join('')+'</div>':'<div class="m22-card">Nenhum lançamento para os filtros selecionados.</div>');body.querySelectorAll('[data-detail]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.detail).classList.toggle('open')));
 }else if(tab==='investments'){
 const inv=investments(c,selected);body.innerHTML='<div class="m22-section">Investimentos</div>'+(inv?card('Patrimônio identificado',money(inv.current),`Variação mensal: ${percentChange(inv.changePct)} vs. mês anterior`)+(inv.prior===null?'<div class="m224-note">Não há mês anterior comparável para este período.</div>':'')+'<div class="m22-card">'+inv.entries.map(r=>`<div class="m22-list"><div>${esc(r.name)}</div><div style="text-align:right"><strong>${money(r.value)}</strong><div class="m22-small">${percentChange(r.changePct)} vs. mês anterior</div></div></div>`).join('')+'</div>':'<div class="m22-card">Não foi possível determinar investimentos para este mês.</div>');
 }else if(tab==='plan'){body.innerHTML='<div class="m22-card mf234-empty">Plan · Em definição</div>';}
 }
-document.querySelectorAll('#m224Owners [data-owner]').forEach(b=>b.addEventListener('click',()=>{const o=b.dataset.owner;if(owners.has(o))owners.delete(o);else owners.add(o);b.setAttribute('aria-pressed',String(owners.has(o)));b.textContent=(owners.has(o)?'✓ ':'')+(o==='fabio'?'Fabio':o==='juliana'?'Juliana':'Huawei');render();}));document.querySelectorAll('#mf235ExpenseDrive [data-expowner]').forEach(b=>b.addEventListener('click',()=>{const o=b.dataset.expowner;if(expenseOwners.has(o))expenseOwners.delete(o);else expenseOwners.add(o);b.setAttribute('aria-pressed',String(expenseOwners.has(o)));b.textContent=(expenseOwners.has(o)?'✓ ':'')+(o==='fabio'?'Fabio':o==='juliana'?'Juliana':o==='huawei'?'Huawei':'Casal');render();}));$('m22Month').addEventListener('change',e=>{selected=e.target.value;render()});document.querySelectorAll('#mf22 [data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=tab===b.dataset.tab?null:b.dataset.tab;document.querySelectorAll('#mf22 [data-tab]').forEach(x=>x.setAttribute('aria-selected',String(tab===x.dataset.tab)));render()}));$('m22Refresh').addEventListener('click',()=>document.getElementById('mfRefresh').click());
+document.querySelectorAll('#m224Owners [data-owner]').forEach(b=>b.addEventListener('click',()=>{const o=b.dataset.owner;if(owners.has(o))owners.delete(o);else owners.add(o);b.setAttribute('aria-pressed',String(owners.has(o)));b.textContent=(owners.has(o)?'✓ ':'')+(o==='fabio'?'Fabio':o==='juliana'?'Juliana':'Huawei');render();}));document.querySelectorAll('#mf235ExpenseDrive [data-expowner]').forEach(b=>b.addEventListener('click',()=>{const o=b.dataset.expowner;if(expenseOwners.has(o))expenseOwners.delete(o);else expenseOwners.add(o);b.setAttribute('aria-pressed',String(expenseOwners.has(o)));b.textContent=(expenseOwners.has(o)?'✓ ':'')+(o==='fabio'?'Fabio':o==='juliana'?'Juliana':o==='huawei'?'Huawei':'Casal');render();}));$('m22Month').addEventListener('change',e=>{selected=e.target.value;expenseTypes.clear();expenseOrigins.clear();expenseTypesReady=false;expenseOriginsReady=false;render()});document.querySelectorAll('#mf22 [data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=tab===b.dataset.tab?null:b.dataset.tab;document.querySelectorAll('#mf22 [data-tab]').forEach(x=>x.setAttribute('aria-selected',String(tab===x.dataset.tab)));render()}));$('m22Refresh').addEventListener('click',()=>document.getElementById('mfRefresh').click());
 window.mf22Render=function(){selected=null;render();};
 if(matchMedia('(max-width:760px)').matches)document.body.classList.add('mf22-ready');try{render()}catch(e){console.error('Mobile insights render error',e);body.innerHTML='<div class="m22-card">Não foi possível exibir os insights. Use Refresh ou reabra o aplicativo. Detalhe: '+esc(e.message)+'</div>';}
 })();
