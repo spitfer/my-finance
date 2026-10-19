@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>My Finance 2.3.5 — Auditoria e Investimentos</title>
+  <title>My Finance 2.3.6 — Auditoria e Investimentos</title>
   <meta name="theme-color" content="#020617" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -658,7 +658,7 @@ html,body{max-width:100%;}
 </style></head>
 <body>
 <div id="mfMobileShell" aria-label="My Finance Mobile">
-  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.3.5</span></div>
+  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.3.6</span></div>
   <section id="mf23Welcome" class="mf23-welcome" aria-labelledby="mf23Title" hidden>
     <div class="mf23-hero"><div class="mf23-logo" aria-hidden="true">FJ</div>
       <div class="mf23-kicker">YOUR PERSONAL FINANCIAL INTELLIGENCE</div>
@@ -1188,8 +1188,8 @@ let html='<div class="m22-section">Executive Insights</div>';
 html+=card('Valor da despesa',money(spent));
 html+=card('Média dos últimos 3 meses',avg===null?'Histórico insuficiente':money(avg),avg===null?'':`Variação da despesa atual: ${avg===0?'—':percentChange((spent/avg-1)*100)}`);
 html+=card('Receita',rev==='not-applicable'?'Not applicable':rev===null?'Indisponível':money(rev));
-html+=card('% da despesa total do mês',share===null?'—':percentChange(share),`Despesa geral do mês: ${money(general)}`);
-html+=card('Despesa / Receita',rev==='not-applicable'?'Not applicable':rev===null||rev<=0?'—':percentChange(spent/rev*100),rev==='not-applicable'?'':rev===null?'Receita indisponível':rev===0?'Receita igual a zero':'Percentual da receita comprometida pelas despesas');
+html+=card('Variação vs. despesa total do mês',share===null?'—':percentChange((general-spent)/general*100),`Diferença: ${money(general-spent)} · Despesa geral: ${money(general)}`);
+html+=card('Resultado financeiro (%)',rev==='not-applicable'?'Not applicable':rev===null||rev<=0?'—':percentChange((rev-spent)/rev*100),rev==='not-applicable'?'':rev===null?'Receita indisponível':rev===0?'Receita igual a zero':`Saldo: ${money(rev-spent)} · ${spent>rev?'Despesas acima da receita':'Despesas dentro da receita'}`);
 const cats={};rows.forEach(r=>cats[r.category]=(cats[r.category]||0)+r.amount);html+='<div class="m22-section">Maiores categorias de despesas</div><div class="m22-card">'+(Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,v])=>`<div class="m22-list"><div>${esc(n)}</div><strong>${money(v)}</strong></div>`).join('')||'Sem despesas para o filtro.')+'</div>';body.innerHTML=html;
 }else if(tab==='transactions'){
 const expenseRows=expenseAllocatedRows(allRows);const types=expenseRows.map(r=>r.type||'Não informado'),origins=expenseRows.map(r=>r.origin||'Não informado');const tUnique=[...new Set(types)],oUnique=[...new Set(origins)];if(!expenseTypesReady){tUnique.forEach(v=>expenseTypes.add(v));expenseTypesReady=true;}if(!expenseOriginsReady){oUnique.forEach(v=>expenseOrigins.add(v));expenseOriginsReady=true;}
