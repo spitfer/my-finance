@@ -658,7 +658,7 @@ html,body{max-width:100%;}
 </style></head>
 <body>
 <div id="mfMobileShell" aria-label="My Finance Mobile">
-  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.3.8</span></div>
+  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.4.0</span></div>
   <section id="mf23Welcome" class="mf23-welcome" aria-labelledby="mf23Title" hidden>
     <div class="mf23-hero"><div class="mf23-logo" aria-hidden="true">FJ</div>
       <div class="mf23-kicker">YOUR PERSONAL FINANCIAL INTELLIGENCE</div>
@@ -1126,9 +1126,33 @@ for(let i=0;i<3;i++){mfFrames[i].setAttribute('src','about:blank');mfLoad(i);}
 #mf22 .m224-owner-buttons button[aria-pressed=true],#mf234ExpenseFilters button[aria-pressed=true]{background:linear-gradient(130deg,#007ba9,#1666a8);border-color:#79d5f5}
 #mf22 .m22-section{color:#9adfff}
 }
+</style><style id="mf240-plan-style">
+#mf22 .m240-controls{padding:12px;background:#12243b;border:1px solid #304761;border-radius:14px;margin:10px 0 14px}
+#mf22 .m240-controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#adc5df}
+#mf22 #m240Month{background:#091a2d;color:#e8f2ff;border:1px solid #52708e;border-radius:9px;padding:10px;font-size:14px;width:100%;max-width:100%}
+#mf22 .m240-week-label{font-size:12px;color:#b9d3ed;margin:13px 0 8px}
+#mf22 .m240-weeks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+#mf22 .m240-weeks button{min-width:0;padding:10px 2px;background:#102f4c;color:#dceaf8;border:1px solid #375875;border-radius:8px;font-size:12px;cursor:pointer}
+#mf22 .m240-weeks button[aria-pressed=true]{background:#126ea5;border-color:#72c7f4;color:white;font-weight:700}
+#mf22 .m240-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#mf22 .m240-category{min-width:0;width:100%;text-align:left;cursor:pointer;margin:0!important;font:inherit;color:inherit;border:1px solid #35516d}
+#mf22 .m240-category:focus-visible,#mf22 .m240-back:focus-visible{outline:2px solid #9fe0ff;outline-offset:2px}
+#mf22 .m240-cat-title{display:flex;justify-content:space-between;gap:6px;font-size:14px;font-weight:700;overflow-wrap:anywhere;margin-bottom:12px}
+#mf22 .m240-cat-title span{font-size:20px;color:#8cb7dc}
+#mf22 .m240-values{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#b6c9df}
+#mf22 .m240-values span{display:flex;flex-wrap:wrap;justify-content:space-between;gap:3px}
+#mf22 .m240-values b{color:#e6f4ff;font-size:13px;overflow-wrap:anywhere}
+#mf22 .m240-delta-row{display:flex;justify-content:space-between;align-items:center;gap:6px;border-top:1px solid #2c4660;margin-top:10px;padding-top:9px;font-size:12px;color:#b6c9df}
+#mf22 .mf240-delta{font-size:14px;overflow-wrap:anywhere;text-align:right}
+#mf22 .mf240-over{color:#ff777e}#mf22 .mf240-under{color:#69dfab}#mf22 .mf240-neutral{color:#cbd5e1}
+#mf22 .m240-total{border-color:#4783a5;background:linear-gradient(135deg,#193c58,#13283f)}
+#mf22 .m240-back{background:#183957;color:#d9f2ff;border:1px solid #547e9d;border-radius:10px;padding:11px 13px;margin:10px 0 14px;cursor:pointer}
+#mf22 .m240-sub{margin-bottom:10px}
+@media(min-width:650px){#mf22 .m240-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style><script id="mf22-logic">
 (function(){'use strict';
 const $=id=>document.getElementById(id), body=$('m22Body');let tab=null,selected=null;const expenseTypes=new Set(),expenseOrigins=new Set();let expenseTypesReady=false,expenseOriginsReady=false;const owners=new Set(['fabio','juliana','huawei']);const expenseOwners=new Set(['casal','fabio','juliana','huawei']);
+let planMonth=null,planWeek=0,planCategory=null;
 const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}).format(n||0);
 const pct=n=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:1}).format(n)+'%';
@@ -1159,6 +1183,63 @@ function ownerInfo(){return Array.from(owners).map(o=>o==='fabio'?'Fabio':o==='j
 function ownerFilterNote(){return `<div class="m224-note">Filtro: <strong>${esc(ownerInfo())}</strong>. Grupo Huawei = 100% Huawei. Grupo 2 determina o responsável: Fabio e Juliana = 100% individual; Casal = 50% para cada; Huawei = reembolso. Orçamento da aba Plan e receitas são globais, sem rateio por responsável.</div>`;}
 function income(c,k){const ws=c.wb.Sheets['base receita vs despesa'];if(!ws)return null;const a=XLSX.utils.sheet_to_json(ws,{defval:''});let found=false,total=0;const selectedOwners=new Set([...owners].filter(o=>o!=='huawei'));if(!selectedOwners.size)return 'not-applicable';for(const r of a){if(String(r.Tipo||'').toLowerCase().trim()!=='receita')continue;const who=normalizedOwner(r.Origem);if(!selectedOwners.has(who))continue;let d=r.Dia;let dt=d instanceof Date?d:(typeof d==='number'?XLSX.SSF.parse_date_code(d):null);let ky=dt?(dt instanceof Date?key(dt.getFullYear(),dt.getMonth()):key(dt.y,dt.m-1)):null;if(ky===k){total+=num(r.Valor);found=true;}}return found?total:null;}
 function budget(c,k){const ws=c.wb.Sheets.Plan;if(!ws)return{};const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});const monthName=months[Number(k.slice(5))-1].toLowerCase();const by={};for(const r of aoa){if(String(r[0]||'').toLowerCase().trim()!==monthName)continue;const cat=String(r[1]||'').trim();if(!cat||cat.toLowerCase()==='total')continue;let plan=0,real=0,has=false;for(let j=3;j<=10;j+=2){if(r[j]!==''&&r[j]!=null){plan+=num(r[j]);has=true;}real+=num(r[j+1]);}if(!has)continue;if(!by[cat])by[cat]={plan:0,real:0};by[cat].plan+=plan;by[cat].real+=real;}return by;}
+function planData(c){
+ const ws=c.wb.Sheets.Plan;if(!ws)return {months:[],items:[]};
+ const a=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+ const items=[], available=new Set();
+ const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+ for(const r of a){
+  const mi=months.findIndex(m=>norm(m)===norm(r[0]));
+  if(mi<0)continue;
+  const category=String(r[1]??'').trim(),subcategory=String(r[2]??'').trim();
+  if(!category||norm(category)==='total'||!subcategory)continue;
+  const k=key(2026,mi);available.add(k);
+  const weeks=[];
+  for(let w=0;w<4;w++){
+   const pc=3+w*2,rc=pc+1;
+   const plan=num(r[pc]),real=num(r[rc]);
+   weeks.push({plan,real});
+  }
+  items.push({month:k,category,subcategory,weeks});
+ }
+ return {months:[...available].sort(),items};
+}
+function renderPlan(c){
+ const d=planData(c);
+ if(!d.months.length){body.innerHTML='<div class="m22-card">Não há meses válidos na aba Plan.</div>';return;}
+ if(!planMonth||!d.months.includes(planMonth))planMonth=d.months[d.months.length-1];
+ const weeks=planWeek===0?[0,1,2,3]:[planWeek-1];
+ const categories=new Map();
+ for(const item of d.items){
+  if(item.month!==planMonth)continue;
+  const plan=weeks.reduce((a,w)=>a+item.weeks[w].plan,0),real=weeks.reduce((a,w)=>a+item.weeks[w].real,0);
+  if(Math.abs(plan)<.000001&&Math.abs(real)<.000001)continue;
+  if(!categories.has(item.category))categories.set(item.category,{name:item.category,plan:0,real:0,subs:[]});
+  const cat=categories.get(item.category);cat.plan+=plan;cat.real+=real;cat.subs.push({name:item.subcategory,plan,real});
+ }
+ const cats=[...categories.values()].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+ const total=cats.reduce((a,x)=>({plan:a.plan+x.plan,real:a.real+x.real}),{plan:0,real:0});
+ const delta=(p,r)=>{const n=r-p;return `<strong class="mf240-delta ${Math.abs(n)<.005?'mf240-neutral':n>0?'mf240-over':'mf240-under'}">${n>0?'+':''}${money(n)}</strong>`};
+ const period=months[Number(planMonth.slice(5))-1]+' '+planMonth.slice(0,4);
+ const nav=`<div class="m240-controls"><label>Mês<select id="m240Month">${d.months.map(k=>`<option value="${k}" ${k===planMonth?'selected':''}>${months[Number(k.slice(5))-1]} ${k.slice(0,4)}</option>`).join('')}</select></label><div class="m240-week-label">Weeks · ${planWeek===0?'Todas':'Week '+planWeek}</div><div class="m240-weeks">${[0,1,2,3,4].map(w=>`<button type="button" data-week="${w}" aria-pressed="${w===planWeek}">${w===0?'Todas':'W'+w}</button>`).join('')}</div></div>`;
+ let html='<div class="m22-section">Plan · Variavel Budget</div>'+nav;
+ if(planCategory!==null){
+  const cat=categories.get(planCategory);
+  html+=`<button type="button" id="m240Back" class="m240-back">← Voltar às categorias</button>`;
+  if(cat){html+=`<div class="m22-card"><div class="m22-label">${esc(cat.name)} · ${esc(period)}</div><div class="m240-values"><span>Plan <b>${money(cat.plan)}</b></span><span>Real <b>${money(cat.real)}</b></span></div><div class="m240-delta-row">Delta ${delta(cat.plan,cat.real)}</div></div><div class="m22-section">Subcategorias</div>`;
+   html+=cat.subs.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).map(x=>`<div class="m22-card m240-sub"><div class="m240-cat-title">${esc(x.name)}</div><div class="m240-values"><span>Plan <b>${money(x.plan)}</b></span><span>Real <b>${money(x.real)}</b></span></div><div class="m240-delta-row">Delta ${delta(x.plan,x.real)}</div></div>`).join('');
+  }else{html+='<div class="m22-card">Esta categoria não possui Plan nem Real para a Week selecionada.</div>'}
+ }else{
+  html+=`<div class="m22-card m240-total"><div class="m22-label">Consolidado · ${esc(period)}</div><div class="m240-values"><span>Plan <b>${money(total.plan)}</b></span><span>Real <b>${money(total.real)}</b></span></div><div class="m240-delta-row">Delta ${delta(total.plan,total.real)}</div></div><div class="m22-section">Categorias · ${cats.length} com movimentação</div>`;
+  html+=cats.length?'<div class="m240-grid">'+cats.map(x=>`<button type="button" class="m22-card m240-category" data-cat="${esc(x.name)}"><div class="m240-cat-title">${esc(x.name)} <span>›</span></div><div class="m240-values"><span>Plan <b>${money(x.plan)}</b></span><span>Real <b>${money(x.real)}</b></span></div><div class="m240-delta-row">Delta ${delta(x.plan,x.real)}</div></button>`).join('')+'</div>':'<div class="m22-card">Sem planejamento ou despesas para o período selecionado.</div>';
+ }
+ body.innerHTML=html;
+ const monthSelect=$('m240Month');if(monthSelect)monthSelect.addEventListener('change',e=>{planMonth=e.target.value;planCategory=null;render()});
+ body.querySelectorAll('[data-week]').forEach(b=>b.addEventListener('click',()=>{planWeek=Number(b.dataset.week);planCategory=null;render()}));
+ body.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click',()=>{planCategory=b.dataset.cat;render()}));
+ const back=$('m240Back');if(back)back.addEventListener('click',()=>{planCategory=null;render()});
+}
+
 function investments(c,k){
  const ws=c.wb.Sheets.Investimentos;if(!ws)return null;
  const a=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});if(!a.length)return null;
@@ -1182,6 +1263,7 @@ function percentChange(value){if(value===null||!Number.isFinite(value))return '�
 function card(label,value,extra=''){return `<div class="m22-card"><div class="m22-label">${label}</div><div class="m22-number">${value}</div>${extra?`<div class="m22-small">${extra}</div>`:''}</div>`;}
 function filterChoices(containerId,values,selection,kind){const el=$(containerId);const unique=[...new Set(values.map(v=>String(v||'Não informado').trim()||'Não informado'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));const all=unique.every(v=>selection.has(v));el.innerHTML=`<button type="button" data-filter="${kind}" data-value="__all__" aria-pressed="${all}">Todos</button>`+unique.map(v=>`<button type="button" data-filter="${kind}" data-value="${esc(v)}" aria-pressed="${selection.has(v)}">${esc(v)}</button>`).join('');el.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>{const set=kind==='type'?expenseTypes:expenseOrigins;const val=btn.dataset.value;if(val==='__all__'){if(unique.every(v=>set.has(v)))set.clear();else{set.clear();unique.forEach(v=>set.add(v));}}else{if(set.has(val))set.delete(val);else set.add(val);}render();}));}
 function render(){const c=context();const select=$('m22Month');if(!c){$('m22Status').textContent='Faça login para carregar o Excel';$('m224Owners').hidden=true;$('mf235ExpenseDrive').hidden=true;$('mf234ExpenseFilters').hidden=true;body.innerHTML='';return;}
+select.style.display=tab==='plan'?'none':'';if(select.previousElementSibling&&select.previousElementSibling.tagName==='LABEL')select.previousElementSibling.style.display=tab==='plan'?'none':'';
 if(select.options.length!==c.opts.length){select.innerHTML=c.opts.map(k=>`<option value="${k}">${months[Number(k.slice(5))-1]} ${k.slice(0,4)}</option>`).join('');}select.value=selected;
 $('m22Status').textContent='OneDrive sincronizado';$('m224Owners').hidden=tab!=='insights';$('mf235ExpenseDrive').hidden=tab!=='transactions';$('mf234ExpenseFilters').hidden=tab!=='transactions';
 if(!tab){body.innerHTML='';return;}
@@ -1209,10 +1291,10 @@ const filtered=expenseRows.filter(r=>expenseTypes.has(r.type||'Não informado')&
 body.innerHTML=`<div class="m22-section">Despesas · ${filtered.length} lançamentos</div>`+card('Total filtrado',money(total))+(filtered.length?'<div class="m22-card">'+filtered.sort((a,b)=>b.amount-a.amount).map((r,i)=>`<button class="m22-item" type="button" data-detail="d${i}"><div class="m22-row"><span>${esc(r.description||r.subcategory||r.category)}</span><strong>${money(r.amount)}</strong></div><small>${esc(r.category)} · ${esc(r.subcategory)}</small></button><div class="m22-detail" id="d${i}">Tipo: ${esc(r.type)} · Grupo 2: ${esc(r.group2)} · Origem: ${esc(r.origin)}</div>`).join('')+'</div>':'<div class="m22-card">Nenhum lançamento para os filtros selecionados.</div>');body.querySelectorAll('[data-detail]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.detail).classList.toggle('open')));
 }else if(tab==='investments'){
 const inv=investments(c,selected);body.innerHTML='<div class="m22-section">Investimentos</div>'+(inv?card('Patrimônio identificado',money(inv.current),`Variação mensal: ${percentChange(inv.changePct)} vs. mês anterior`)+(inv.prior===null?'<div class="m224-note">Não há mês anterior comparável para este período.</div>':'')+'<div class="m22-card">'+inv.entries.map(r=>`<div class="m22-list"><div>${esc(r.name)}</div><div style="text-align:right"><strong>${money(r.value)}</strong><div class="m22-small">${percentChange(r.changePct)} vs. mês anterior</div></div></div>`).join('')+'</div>':'<div class="m22-card">Não foi possível determinar investimentos para este mês.</div>');
-}else if(tab==='plan'){body.innerHTML='<div class="m22-card mf234-empty">Plan · Em definição</div>';}
+}else if(tab==='plan'){renderPlan(c);}
 }
 document.querySelectorAll('#m224Owners [data-owner]').forEach(b=>b.addEventListener('click',()=>{const o=b.dataset.owner;if(owners.has(o))owners.delete(o);else owners.add(o);b.setAttribute('aria-pressed',String(owners.has(o)));b.textContent=(owners.has(o)?'✓ ':'')+(o==='fabio'?'Fabio':o==='juliana'?'Juliana':'Huawei');render();}));document.querySelectorAll('#mf235ExpenseDrive [data-expowner]').forEach(b=>b.addEventListener('click',()=>{const o=b.dataset.expowner;if(expenseOwners.has(o))expenseOwners.delete(o);else expenseOwners.add(o);b.setAttribute('aria-pressed',String(expenseOwners.has(o)));b.textContent=(expenseOwners.has(o)?'✓ ':'')+(o==='fabio'?'Fabio':o==='juliana'?'Juliana':o==='huawei'?'Huawei':'Casal');render();}));$('m22Month').addEventListener('change',e=>{selected=e.target.value;expenseTypes.clear();expenseOrigins.clear();expenseTypesReady=false;expenseOriginsReady=false;render()});document.querySelectorAll('#mf22 [data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=tab===b.dataset.tab?null:b.dataset.tab;document.querySelectorAll('#mf22 [data-tab]').forEach(x=>x.setAttribute('aria-selected',String(tab===x.dataset.tab)));render()}));$('m22Refresh').addEventListener('click',()=>document.getElementById('mfRefresh').click());
-window.mf22Render=function(){selected=null;render();};
+window.mf22Render=function(){selected=null;planMonth=null;planWeek=0;planCategory=null;render();};
 if(matchMedia('(max-width:760px)').matches)document.body.classList.add('mf22-ready');try{render()}catch(e){console.error('Mobile insights render error',e);body.innerHTML='<div class="m22-card">Não foi possível exibir os insights. Use Refresh ou reabra o aplicativo. Detalhe: '+esc(e.message)+'</div>';}
 })();
 </script><script id="mf223-bootstrap">
