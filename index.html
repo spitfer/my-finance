@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>My Finance 2.4.4 — Acesso compartilhado</title>
+  <title>My Finance 2.4.5 — Acesso automático</title>
   <meta name="theme-color" content="#020617" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -655,11 +655,11 @@ html,body{max-width:100%;}
  #mf23Welcome .mf23-authnote{text-align:center;color:#a9bfd4;font-size:12px;margin:15px 0 0;line-height:1.5}
  #mf23Welcome .mf23-foot{margin-top:auto;padding-top:30px;color:#7895af;text-align:center;font-size:11px;line-height:1.5}
 }
-</style><meta name="my-finance-build" content="2.4.4-shared-20261023">
+</style><meta name="my-finance-build" content="2.4.5-shared-discovery-20261023">
 </head>
 <body>
 <div id="mfMobileShell" aria-label="My Finance Mobile">
-  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.4.4</span></div>
+  <div class="mf-mobile-brand"><strong>My Finance</strong><span id="mfMobileVersion">Mobile Insights · 2.4.5</span></div>
   <section id="mf23Welcome" class="mf23-welcome" aria-labelledby="mf23Title" hidden>
     <div class="mf23-hero"><div class="mf23-logo" aria-hidden="true">FJ</div>
       <div class="mf23-kicker">YOUR PERSONAL FINANCIAL INTELLIGENCE</div>
@@ -1027,36 +1027,6 @@ const MF_CLIENT_ID = 'a064a61f-fb6c-4885-b985-ee4fefcbd476';
 const MF_REDIRECT = 'https://spitfer.github.io/my-finance/';
 const MF_WORKBOOK_PATH = 'My Finance/data/Contas_Casal_A-1.xlsm';
 const MF_SCOPES = ['User.Read', 'Files.Read'];
-// Shared workbook link is entered locally by the user, never embedded in public source.
-const MF_SHARED_SESSION_KEY = 'mf_shared_excel_link_v244';
-function mfShareId(link) {
-  const value = link.trim();
-  const parsed = new URL(value);
-  if (parsed.protocol !== 'https:' || !['1drv.ms','onedrive.live.com'].includes(parsed.hostname.toLowerCase())) throw Error('Informe um link HTTPS de compartilhamento do OneDrive.');
-  const raw = new TextEncoder().encode(value);
-  let binary = ''; for (const byte of raw) binary += String.fromCharCode(byte);
-  return 'u!' + btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-async function mfFetchWorkbook(url, token, shared=false) {
-  const headers = {Authorization:`Bearer ${token}`};
-  if(shared) headers.Prefer = 'redeemSharingLinkIfNecessary';
-  const response = await fetch(url,{headers,cache:'no-store',redirect:'follow'});
-  if(!response.ok){let detail='';try{const body=await response.json();detail=body.error?.message||'';}catch(_){}const e=new Error(`Microsoft Graph HTTP ${response.status}${detail?': '+detail:''}`);e.status=response.status;throw e;}
-  const bytes = await response.arrayBuffer();
-  if(!bytes.byteLength) throw Error('OneDrive returned an empty workbook');
-  return bytes;
-}
-function mfAskSharedLink() {
-  const current=sessionStorage.getItem(MF_SHARED_SESSION_KEY)||'';
-  const input=prompt('Excel não encontrado no seu OneDrive. Cole o link do Excel compartilhado pelo Fabio para conectar esta sessão:',current);
-  if(input===null)return null;
-  const link=input.trim();
-  if(!link)return null;
-  mfShareId(link); // Validate before storing.
-  sessionStorage.setItem(MF_SHARED_SESSION_KEY,link);
-  return link;
-}
-
 let mfMsal = null;
 let mfAccount = null;
 let mfBusy = false;
@@ -1082,44 +1052,70 @@ async function mfToken() {
     throw err;
   }
 }
-async function mfDownloadOneDrive() {
-  if(!mfAccount || mfBusy) return;
-  mfBusy = true; mfButtons();
-  try {
-    mfSetStatus('Connecting to OneDrive…');
-    const token = await mfToken();
-    if(!token) return;
-    const path = MF_WORKBOOK_PATH.split('/').map(encodeURIComponent).join('/');
-    const endpoint = `https://graph.microsoft.com/v1.0/me/drive/root:/${path}:/content`;
-    let bytes;
-    const savedLink = sessionStorage.getItem(MF_SHARED_SESSION_KEY);
-    if(savedLink) {
-      try {
-        mfSetStatus('Loading shared OneDrive workbook…');
-        bytes = await mfFetchWorkbook(`https://graph.microsoft.com/v1.0/shares/${mfShareId(savedLink)}/driveItem/content`,token,true);
-      } catch(err) {
-        // Do not silently switch to another workbook if a shared link is configured.
-        if(err.status===401||err.status===403)throw Error('A conta Microsoft não tem autorização para ler este arquivo compartilhado pelo Graph. '+err.message);
-        sessionStorage.removeItem(MF_SHARED_SESSION_KEY);
-        throw Error('Falha ao abrir o link compartilhado. Atualize a página e tente novamente. '+err.message);
-      }
-    } else {
-      try {bytes = await mfFetchWorkbook(endpoint,token);}
-      catch(err) {
-        if(err.status!==404)throw err;
-        const link=mfAskSharedLink();
-        if(!link)throw Error('Excel não encontrado no OneDrive desta conta. Use Refresh e informe o link compartilhado.');
-        mfSetStatus('Loading shared OneDrive workbook…');
-        bytes=await mfFetchWorkbook(`https://graph.microsoft.com/v1.0/shares/${mfShareId(link)}/driveItem/content`,token,true);
+// Version 2.4.5: automatic discovery of files shared with the signed-in account.
+// No private sharing URL, account token or workbook content is embedded in this public HTML.
+async function mfGraphFetch(url, token) {
+  return fetch(url,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',redirect:'follow'});
+}
+async function mfGraphError(response) {
+  let detail='';
+  try {const body=await response.json();detail=body.error?.message||'';}catch(_e){}
+  return `Microsoft Graph HTTP ${response.status}${detail ? ': '+detail : ''}`;
+}
+async function mfSharedWorkbook(token) {
+  // Graph sharedWithMe availability varies by Microsoft account and API permissions.
+  // Use paging, and do not assume a shared file is present in the recipient's drive.
+  let url='https://graph.microsoft.com/v1.0/me/drive/sharedWithMe';
+  const matches=[];
+  for(let page=0;url && page<12;page++) {
+    const r=await mfGraphFetch(url,token);
+    if(!r.ok)throw Error('Shared-file discovery unavailable: '+await mfGraphError(r));
+    const body=await r.json();
+    for(const item of body.value||[]) {
+      const remote=item.remoteItem||item;
+      const name=remote.name||item.name||'';
+      if(name.toLocaleLowerCase()=== 'contas_casal_a-1.xlsm') {
+        const driveId=remote.parentReference?.driveId||item.parentReference?.driveId;
+        const itemId=remote.id||item.id;
+        if(driveId&&itemId)matches.push({driveId,itemId});
       }
     }
+    url=body['@odata.nextLink']||null;
+  }
+  if(!matches.length)throw Error('O Excel compartilhado não apareceu na lista de arquivos compartilhados desta conta Microsoft.');
+  let lastError='';
+  for(const {driveId,itemId} of matches) {
+    const endpoint=`https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}/items/${encodeURIComponent(itemId)}/content`;
+    const r=await mfGraphFetch(endpoint,token);
+    if(r.ok)return r.arrayBuffer();
+    lastError=await mfGraphError(r);
+  }
+  throw Error('O arquivo foi encontrado, mas o Graph não permitiu sua leitura: '+lastError);
+}
+async function mfDownloadOneDrive() {
+  if(!mfAccount || mfBusy) return;
+  mfBusy=true;mfButtons();
+  try {
+    mfSetStatus('Connecting to OneDrive…');
+    const token=await mfToken();
+    if(!token)return;
+    const path=MF_WORKBOOK_PATH.split('/').map(encodeURIComponent).join('/');
+    const endpoint=`https://graph.microsoft.com/v1.0/me/drive/root:/${path}:/content`;
+    const response=await mfGraphFetch(endpoint,token);
+    let bytes;
+    if(response.ok)bytes=await response.arrayBuffer();
+    else if(response.status===404) {
+      mfSetStatus('Procurando Excel compartilhado automaticamente…');
+      bytes=await mfSharedWorkbook(token);
+    } else throw Error(await mfGraphError(response));
+    if(!bytes.byteLength)throw Error('OneDrive returned an empty workbook');
     mfSetStatus('Validating workbook…');
-    const file = new File([bytes],MF_WORKBOOK_PATH.split('/').pop(),{type:'application/vnd.ms-excel.sheet.macroEnabled.12'});
+    const file=new File([bytes],MF_WORKBOOK_PATH.split('/').pop(),{type:'application/vnd.ms-excel.sheet.macroEnabled.12'});
     await mfOpen(file);
-  } catch(err) {
+  }catch(err){
     console.error('My Finance OneDrive load failed',err);
     mfSetStatus('OneDrive error: '+(err?.message||String(err)));
-  } finally {mfBusy=false;mfButtons();}
+  }finally{mfBusy=false;mfButtons();}
 }
 async function mfStartAuth() {
   if(!window.msal) {mfSetStatus('Microsoft authentication library unavailable. Check internet access.');return;}
