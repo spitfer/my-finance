@@ -1024,7 +1024,7 @@ window.addEventListener('message',e=>{if(e.data?.type==='MYFINANCE_STATUS'&&!e.d
 // My Finance 2.0 — Microsoft personal account, MSAL SPA Authorization Code + PKCE.
 // No client secret. Never place workbook data or access tokens in the public repository.
 const MF_CLIENT_ID = 'a064a61f-fb6c-4885-b985-ee4fefcbd476';
-const MF_REDIRECT = 'https://spitfer.github.io/my-finance/';
+const MF_REDIRECT = new URL(window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname.replace(/[^/]*$/, ''), window.location.origin).href;
 const MF_WORKBOOK_PATH = 'My Finance/data/Contas_Casal_A-1.xlsm';
 const MF_SCOPES = ['User.Read', 'Files.Read'];
 let mfMsal = null;
